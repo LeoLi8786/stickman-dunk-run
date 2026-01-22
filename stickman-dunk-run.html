@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>火柴人灌篮跑酷</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<style>
+html,body{
+  margin:0;padding:0;overflow:hidden;
+  background:#111;color:#fff;
+  font-family:"Microsoft YaHei",sans-serif;
+}
+#ui{
+  position:absolute;top:0;left:0;right:0;
+  text-align:center;z-index:10;
+}
+button{
+  padding:10px 24px;
+  font-size:14px;
+  border:none;border-radius:20px;
+  background:#ff9800;color:#000;
+}
+</style>
+</head>
+<body>
+
+<div id="ui"></div>
+<canvas id="game"></canvas>
+
+<script>
+/* ===== Canvas ===== */
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+function resize(){
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+}
+resize(); onresize = resize;
+
+/* ===== 状态 ===== */
+let state="start";
+let score=0;
+let best=localStorage.bestScore||0;
+let speed=4;
+let frame=0;
+
+/* ===== 轨道 ===== */
+const lanes=[-1,0,1];
+function laneX(l){
+  return canvas.width/2 + l*canvas.width*0.25;
+}
+
+/* ===== 玩家 ===== */
+const player={
+  lane:0,
+  y:canvas.height*0.7,
+  jumping:false,
+  jumpT:0
+};
+
+/* ===== 障碍 ===== */
+let walls=[];
+function spawnWall(){
+  if(Math.random()<0.18){
+    walls.push({type:"full",y:-50,passed:false});
+  }else{
+    const l=lanes[Math.floor(Math.random()*3)];
+    walls.push({type:"single",lane:l,y:-50});
+  }
+}
+
+/* ===== 火柴人 + 篮球 ===== */
+function drawStickman(x,y,jumping,frame){
+  ctx.save();
+  ctx.strokeStyle="#fff";
+  ctx.lineWidth=3;
+  ctx.lineCap="round";
+
+  // 头
+  ctx.beginPath();
+  ctx.arc(x,y-34,10,0,Math.PI*2);
+  ctx.stroke();
+
+  // 身体
+  ctx.beginPath();
+  ctx.moveTo(x,y-24);
+  ctx.lineTo(x,y+12);
+  ctx.stroke();
+
+  const swing=Math.sin(frame*0.2)*6;
+  const armUp=jumping?-18:0;
+  const legSwing=jumping?0:swing;
+
+  // 左手
+  ctx.beginPath();
+  ctx.moveTo(x,y-18);
+  ctx.lineTo(x-14,y-5+armUp);
+  ctx.stroke();
+
+  // 右手
+  ctx.beginPath();
+  ctx.moveTo(x,y-18);
+  ctx.lineTo(x+14,y-5+armUp);
+  ctx.stroke();
+
+  // 左腿
+  ctx.beginPath();
+  ctx.moveTo(x,y+12);
+  ctx.lineTo(x-10,y+28+legSwing);
+  ctx.stroke();
+
+  // 右腿
+  ctx.beginPath();
+  ctx.moveTo(x,y+12);
+  ctx.lineTo(x+10,y+28-legSwing);
+  ctx.stroke();
+
+  // 篮球
+  const ballOffset=jumping?-30+Math.sin(frame*0.3)*4:Math.abs(Math.sin(frame*0.3))*10;
+  const bx=x+18, by=y+ballOffset;
+  ctx.fillStyle="#ff9800";
+  ctx.beginPath();
+  ctx.arc(bx,by,6,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.strokeStyle="#000"; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(bx-6,by); ctx.lineTo(bx+6,by); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(bx,by-6); ctx.lineTo(bx,by+6); ctx.stroke();
+
+  ctx.restore();
+}
+
+/* ===== 输入 ===== */
+let touchX=null;
+canvas.addEventListener("touchstart",e=>{
+  touchX=e.touches[0].clientX;
+});
+canvas.addEventListener("touchend",e=>{
+  if(state!=="play") return;
+  const dx=e.changedTouches[0].clientX-touchX;
+  if(Math.abs(dx)>40){
+    if(dx>0 && player.lane<1) player.lane++;
+    if(dx<0 && player.lane>-1) player.lane--;
+  }else if(!player.jumping){
+    player.jumping=true;
+    player.jumpT=0;
+  }
+});
+
+/* ===== UI ===== */
+function renderUI(){
+  const ui=document.getElementById("ui");
+  if(state==="start"){
+    ui.innerHTML=`
+      <h2>火柴人灌篮跑酷</h2>
+      <p>滑动切轨道 · 点击灌篮</p>
+      <button onclick="startGame()">开始游戏</button>
+      <p>最高分：${best}</p>`;
+  }else if(state==="over"){
+    ui.innerHTML=`
+      <h2>游戏结束</h2>
+      <p>得分：${score}</p>
+      <p>最高分：${best}</p>
+      <button onclick="startGame()">再来一局</button>`;
+  }else{
+    ui.innerHTML=`<p>得分：${score}</p>`;
+  }
+}
+renderUI();
+
+function startGame(){
+  state="play";
+  score=0; speed=4; frame=0;
+  walls=[]; player.lane=0; player.jumping=false;
+  renderUI();
+}
+
+/* ===== 主循环 ===== */
+function loop(){
+  requestAnimationFrame(loop);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  if(state!=="play") return;
+
+  frame++;
+  if(frame%60===0){
+    spawnWall();
+    score++; speed+=0.05;
+  }
+
+  let py=player.y;
+  if(player.jumping){
+    player.jumpT+=0.08;
+    py-=Math.sin(player.jumpT)*120;
+    if(player.jumpT>Math.PI) player.jumping=false;
+  }
+
+  // 轨道
+  ctx.strokeStyle="#333";
+  lanes.forEach(l=>{
+    ctx.beginPath();
+    ctx.moveTo(laneX(l),0);
+    ctx.lineTo(laneX(l),canvas.height);
+    ctx.stroke();
+  });
+
+  // 玩家
+  drawStickman(laneX(player.lane),py,player.jumping,frame);
+
+  // 障碍
+  for(let i=walls.length-1;i>=0;i--){
+    const w=walls[i];
+    w.y+=speed;
+
+    if(w.type==="single"){
+      ctx.fillStyle="#e53935";
+      ctx.fillRect(laneX(w.lane)-40,w.y,80,30);
+      if(Math.abs(w.y-py)<20 && w.lane===player.lane && !player.jumping){
+        gameOver();
+      }
+    }else{
+      ctx.fillStyle="#ff9800";
+      ctx.fillRect(0,w.y,canvas.width,40);
+      const keyY=canvas.height*0.75;
+      ctx.fillStyle="#0f0";
+      ctx.fillRect(canvas.width/2-30,keyY,60,10);
+      if(!w.passed && Math.abs(w.y-keyY)<10){
+        w.passed=true;
+        if(!player.jumping) gameOver();
+      }
+    }
+
+    if(w.y>canvas.height+60) walls.splice(i,1);
+  }
+}
+
+function gameOver(){
+  state="over";
+  best=Math.max(best,score);
+  localStorage.bestScore=best;
+  renderUI();
+}
+
+loop();
+</script>
+</body>
+</html>
