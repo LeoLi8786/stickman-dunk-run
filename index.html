@@ -3,964 +3,1131 @@
 <head>
 <meta charset="UTF-8">
 <title>家庭篮球跑酷</title>
-<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
-html,body{
-  margin:0;padding:0;overflow:hidden;
-  background:#1a237e;color:#fff;
-  font-family:"Microsoft YaHei",sans-serif;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
-#ui{
-  position:absolute;top:0;left:0;right:0;
-  text-align:center;z-index:10;
-  padding:15px;
-  background:rgba(0,0,0,0.6);
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
-button{
-  padding:12px 28px;
-  font-size:16px;
-  border:none;border-radius:25px;
-  background:#ff4081;color:#fff;
-  margin:5px;
-  cursor:pointer;
-  transition:transform 0.2s;
+
+body {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    touch-action: none;
 }
-button:hover{
-  transform:scale(1.05);
+
+#container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #1a237e;
 }
-#characterSelect{
-  position:absolute;
-  top:50%;left:50%;
-  transform:translate(-50%,-50%);
-  background:rgba(0,0,0,0.9);
-  padding:30px;
-  border-radius:20px;
-  z-index:20;
-  display:none;
+
+#game {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+    display: block;
 }
-.charOption{
-  display:inline-block;
-  margin:15px;
-  text-align:center;
-  cursor:pointer;
-  padding:15px;
-  border-radius:15px;
-  transition:all 0.3s;
+
+#ui {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 100;
+    pointer-events: none;
 }
-.charOption:hover{
-  background:rgba(255,64,129,0.3);
+
+.ui-panel {
+    pointer-events: auto;
+    background: rgba(0, 0, 0, 0.85);
+    border-radius: 20px;
+    padding: 25px;
+    max-width: 90%;
+    margin: 0 auto;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.1);
 }
-.charOption img{
-  width:80px;height:80px;
-  border-radius:50%;
-  margin-bottom:10px;
+
+h1, h2, h3 {
+    color: #fff;
+    text-align: center;
+    margin-bottom: 20px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
-.stats{
-  position:absolute;
-  top:20px;right:20px;
-  background:rgba(0,0,0,0.7);
-  padding:15px;
-  border-radius:15px;
-  font-size:14px;
+
+h1 {
+    font-size: clamp(24px, 6vw, 36px);
+    color: #FFD700;
+}
+
+h2 {
+    font-size: clamp(20px, 5vw, 28px);
+}
+
+h3 {
+    font-size: clamp(18px, 4vw, 24px);
+}
+
+p {
+    color: #fff;
+    text-align: center;
+    margin: 10px 0;
+    font-size: clamp(14px, 3.5vw, 16px);
+    line-height: 1.5;
+}
+
+button {
+    display: block;
+    width: 80%;
+    max-width: 300px;
+    margin: 15px auto;
+    padding: 15px 25px;
+    font-size: clamp(16px, 4vw, 18px);
+    border: none;
+    border-radius: 25px;
+    background: linear-gradient(135deg, #FF4081, #FF9800);
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 15px rgba(255, 64, 129, 0.3);
+    touch-action: manipulation;
+}
+
+button:active {
+    transform: scale(0.95);
+    box-shadow: 0 2px 8px rgba(255, 64, 129, 0.2);
+}
+
+.score-display {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 12px 20px;
+    border-radius: 15px;
+    font-size: clamp(18px, 4vw, 24px);
+    font-weight: bold;
+    color: #FFD700;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    z-index: 101;
+}
+
+.character-select {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 95%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    z-index: 200;
+}
+
+.char-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.char-option {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.char-option:hover, .char-option.selected {
+    background: rgba(255, 64, 129, 0.2);
+    border-color: #FF4081;
+    transform: translateY(-5px);
+}
+
+.char-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin: 0 auto 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+}
+
+.char-name {
+    font-size: clamp(16px, 3.5vw, 20px);
+    margin-bottom: 10px;
+    color: #fff;
+}
+
+.char-ability {
+    font-size: clamp(12px, 2.5vw, 14px);
+    color: #aaa;
+}
+
+.controls-hint {
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: clamp(12px, 2.5vw, 14px);
+    padding: 0 20px;
+}
+
+.game-over {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 500px;
+    z-index: 150;
+}
+
+.fullscreen-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    z-index: 101;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .char-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .ui-panel {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .char-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    button {
+        width: 90%;
+        padding: 12px 20px;
+    }
+    
+    .score-display {
+        top: 10px;
+        left: 10px;
+        padding: 8px 15px;
+        font-size: 16px;
+    }
+}
+
+/* 防止滚动 */
+.no-scroll {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+}
+
+/* 加载动画 */
+.loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 20px;
+}
+
+/* 性能优化 */
+.performance-hint {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
 }
 </style>
 </head>
-<body>
-
-<div id="ui"></div>
-<div id="characterSelect"></div>
-<canvas id="game"></canvas>
+<body class="no-scroll">
+<div id="container">
+    <canvas id="game"></canvas>
+    <div id="ui"></div>
+</div>
 
 <script>
-/* ===== Canvas ===== */
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-function resize(){
-  canvas.width = innerWidth;
-  canvas.height = innerHeight;
-}
-resize(); onresize = resize;
-
-/* ===== 游戏状态 ===== */
-let state = "start";
-let score = 0;
-let best = localStorage.bestScore || 0;
-let speed = 4;
-let frame = 0;
-let selectedCharacter = "爸爸";
-let difficultyLevel = 1;
-let obstacleSpawnRate = 0.18;
-let lastBonusTime = 0;
-
-/* ===== 城市背景 ===== */
-const buildings = [];
-function initBuildings() {
-  buildings.length = 0;
-  for(let i = 0; i < 20; i++) {
-    buildings.push({
-      x: Math.random() * canvas.width,
-      width: 50 + Math.random() * 100,
-      height: 100 + Math.random() * 300,
-      color: `hsl(${220 + Math.random() * 40}, 60%, ${30 + Math.random() * 30}%)`,
-      windows: Math.floor(Math.random() * 10) + 5
-    });
-  }
-}
-initBuildings();
-
-/* ===== 角色定义 ===== */
-const characters = {
-  "爸爸": {
-    color: "#FF9800",
-    width: 60,
-    height: 70,
-    special: "doubleJump", // 可以二段跳
-    draw: function(x, y, jumping, frame) {
-      ctx.save();
-      ctx.fillStyle = this.color;
-      
-      // 胖胖的身体
-      ctx.beginPath();
-      ctx.ellipse(x, y-20, 25, 35, 0, 0, Math.PI*2);
-      ctx.fill();
-      
-      // 头部
-      ctx.beginPath();
-      ctx.arc(x, y-55, 18, 0, Math.PI*2);
-      ctx.fill();
-      
-      // 眼睛
-      ctx.fillStyle = "#000";
-      ctx.beginPath();
-      ctx.arc(x-6, y-58, 3, 0, Math.PI*2);
-      ctx.arc(x+6, y-58, 3, 0, Math.PI*2);
-      ctx.fill();
-      
-      // 嘴巴
-      ctx.beginPath();
-      ctx.arc(x, y-50, 8, 0.1, Math.PI-0.1);
-      ctx.stroke();
-      
-      // 手臂
-      ctx.lineWidth = 8;
-      ctx.lineCap = "round";
-      ctx.strokeStyle = this.color;
-      ctx.beginPath();
-      ctx.moveTo(x-30, y-30);
-      ctx.lineTo(x-15, y-25);
-      ctx.stroke();
-      
-      ctx.beginPath();
-      ctx.moveTo(x+30, y-30);
-      ctx.lineTo(x+15, y-25);
-      ctx.stroke();
-      
-      // 篮球
-      const ballY = jumping ? y-15 : y+5;
-      ctx.fillStyle = "#ff5722";
-      ctx.beginPath();
-      ctx.arc(x+25, ballY, 10, 0, Math.PI*2);
-      ctx.fill();
-      
-      // 篮球纹路
-      ctx.strokeStyle = "#000";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(x+15, ballY);
-      ctx.lineTo(x+35, ballY);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(x+25, ballY-10);
-      ctx.lineTo(x+25, ballY+10);
-      ctx.stroke();
-      
-      ctx.restore();
+// 性能优化：使用 requestAnimationFrame 的稳定版本
+class GameLoop {
+    constructor(update, render) {
+        this.update = update;
+        this.render = render;
+        this.rafId = null;
+        this.lastTime = 0;
+        this.accumulator = 0;
+        this.delta = 1000 / 60; // 60 FPS
+        this.running = false;
     }
-  },
-  "lucky": {
-    color: "#4CAF50",
-    width: 45,
-    height: 55,
-    special: "fast", // 移动更快
-    draw: function(x, y, jumping, frame) {
-      ctx.save();
-      ctx.fillStyle = this.color;
-      
-      // 身体
-      ctx.beginPath();
-      ctx.ellipse(x, y-15, 15, 20, 0, 0, Math.PI*2);
-      ctx.fill();
-      
-      // 头部
-      ctx.beginPath();
-      ctx.arc(x, y-40, 12, 0, Math.PI*2);
-      ctx.fill();
-      
-      // 眼睛（更大更可爱）
-      ctx.fillStyle = "#000";
-      ctx.beginPath();
-      ctx.arc(x-4, y-42, 4, 0, Math.PI*2);
-      ctx.arc(x+4, y-42, 4, 0, Math.PI*2);
-      ctx.fill();
-      
-      // 嘴巴微笑
-      ctx.beginPath();
-      ctx.arc(x, y-36, 6, 0.2, Math.PI-0.2);
-      ctx.stroke();
-      
-      // 帽子
-      ctx.fillStyle = "#2196F3";
-      ctx.beginPath();
-      ctx.ellipse(x, y-48, 15, 8, 0, 0, Math.PI*2);
-      ctx.fill();
-      
-      // 手臂
-      ctx.lineWidth = 6;
-      ctx.lineCap = "round";
-      ctx.strokeStyle = this.color;
-      ctx.beginPath();
-      ctx.moveTo(x-20, y-20);
-      ctx.lineTo(x-10, y-15);
-      ctx.stroke();
-      
-      // 抱着篮球
-      ctx.fillStyle = "#ff5722";
-      ctx.beginPath();
-      ctx.arc(x+15, y-10, 8, 0, Math.PI*2);
-      ctx.fill();
-      
-      ctx.restore();
-    }
-  },
-  "刘大力": {
-    color: "#E91E63",
-    width: 50,
-    height: 60,
-    special: "highJump", // 跳得更高
-    draw: function(x, y, jumping, frame) {
-      ctx.save();
-      ctx.fillStyle = this.color;
-      
-      // 苗条身体
-      ctx.beginPath();
-      ctx.ellipse(x, y-20, 18, 25, 0, 0, Math.PI*2);
-      ctx.fill();
-      
-      // 头部
-      ctx.beginPath();
-      ctx.arc(x, y-48, 15, 0, Math.PI*2);
-      ctx.fill();
-      
-      // 长发
-      ctx.beginPath();
-      ctx.moveTo(x-15, y-48);
-      ctx.quadraticCurveTo(x-25, y-30, x-10, y-20);
-      ctx.quadraticCurveTo(x, y-25, x, y-35);
-      ctx.fill();
-      
-      // 眼睛
-      ctx.fillStyle = "#000";
-      ctx.beginPath();
-      ctx.arc(x-5, y-50, 3, 0, Math.PI*2);
-      ctx.arc(x+5, y-50, 3, 0, Math.PI*2);
-      ctx.fill();
-      
-      // 辫子装饰
-      ctx.fillStyle = "#FFD700";
-      ctx.beginPath();
-      ctx.arc(x-12, y-45, 3, 0, Math.PI*2);
-      ctx.arc(x+12, y-45, 3, 0, Math.PI*2);
-      ctx.fill();
-      
-      // 灌篮动作
-      const jumpOffset = jumping ? -20 : 0;
-      ctx.lineWidth = 6;
-      ctx.strokeStyle = this.color;
-      ctx.beginPath();
-      ctx.moveTo(x-20, y-15);
-      ctx.lineTo(x-10, y-5+jumpOffset);
-      ctx.stroke();
-      
-      ctx.beginPath();
-      ctx.moveTo(x+20, y-15);
-      ctx.lineTo(x+10, y-5+jumpOffset);
-      ctx.stroke();
-      
-      // 手上的篮球
-      ctx.fillStyle = "#ff5722";
-      ctx.beginPath();
-      ctx.arc(x+25, y+jumpOffset, 9, 0, Math.PI*2);
-      ctx.fill();
-      
-      // 灌篮特效
-      if(jumping) {
-        ctx.strokeStyle = "#FFD700";
-        ctx.lineWidth = 3;
-        ctx.setLineDash([5, 5]);
-        ctx.beginPath();
-        ctx.arc(x+25, y+jumpOffset, 15, 0, Math.PI*2);
-        ctx.stroke();
-      }
-      
-      ctx.restore();
-    }
-  },
-  "nn": {
-    color: "#9C27B0",
-    width: 55,
-    height: 65,
-    special: "slowTime", // 减缓时间
-    draw: function(x, y, jumping, frame) {
-      ctx.save();
-      ctx.fillStyle = this.color;
-      
-      // 身体
-      ctx.beginPath();
-      ctx.ellipse(x, y-15, 22, 28, 0, 0, Math.PI*2);
-      ctx.fill();
-      
-      // 头部
-      ctx.beginPath();
-      ctx.arc(x, y-45, 16, 0, Math.PI*2);
-      ctx.fill();
-      
-      // 银发
-      ctx.fillStyle = "#FFFFFF";
-      ctx.beginPath();
-      ctx.ellipse(x, y-58, 20, 10, 0, 0, Math.PI*2);
-      ctx.fill();
-      
-      // 老花镜
-      ctx.strokeStyle = "#000";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(x-8, y-43, 6, 0, Math.PI*2);
-      ctx.arc(x+8, y-43, 6, 0, Math.PI*2);
-      ctx.moveTo(x-2, y-43);
-      ctx.lineTo(x+2, y-43);
-      ctx.stroke();
-      
-      // 慈祥的微笑
-      ctx.beginPath();
-      ctx.arc(x, y-35, 8, 0.1, Math.PI-0.1);
-      ctx.stroke();
-      
-      // 拐杖手臂
-      ctx.lineWidth = 5;
-      ctx.strokeStyle = this.color;
-      ctx.beginPath();
-      ctx.moveTo(x-25, y-5);
-      ctx.lineTo(x-10, y-10);
-      ctx.stroke();
-      
-      // 拐杖
-      ctx.strokeStyle = "#795548";
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(x-25, y-5);
-      ctx.lineTo(x-35, y+15);
-      ctx.stroke();
-      
-      // 另一只手拿篮球
-      ctx.fillStyle = "#ff5722";
-      ctx.beginPath();
-      ctx.arc(x+20, y, 8, 0, Math.PI*2);
-      ctx.fill();
-      
-      // 针织纹理
-      ctx.strokeStyle = "#FFFFFF";
-      ctx.lineWidth = 1;
-      for(let i = -2; i <= 2; i++) {
-        ctx.beginPath();
-        ctx.arc(x+i*5, y-15, 2, 0, Math.PI*2);
-        ctx.stroke();
-      }
-      
-      ctx.restore();
-    }
-  }
-};
 
-/* ===== 玩家 ===== */
-const player = {
-  lane: 0,
-  y: canvas.height * 0.7,
-  jumping: false,
-  jumpT: 0,
-  doubleJumpUsed: false,
-  specialCooldown: 0
-};
-
-/* ===== 轨道系统 ===== */
-const lanes = [-1, 0, 1];
-function laneX(l) {
-  return canvas.width/2 + l * canvas.width * 0.25;
-}
-
-/* ===== 篮球主题障碍物 ===== */
-let obstacles = [];
-const obstacleTypes = {
-  hoop: { // 篮筐
-    width: 80,
-    height: 60,
-    color: "#FF9800",
-    draw: function(x, y) {
-      // 篮板
-      ctx.fillStyle = "#FFFFFF";
-      ctx.fillRect(x-40, y, 80, 40);
-      ctx.strokeStyle = "#000";
-      ctx.lineWidth = 3;
-      ctx.strokeRect(x-40, y, 80, 40);
-      
-      // 篮筐
-      ctx.fillStyle = "#FF5722";
-      ctx.beginPath();
-      ctx.ellipse(x, y+20, 25, 10, 0, 0, Math.PI*2);
-      ctx.fill();
-      
-      // 篮网
-      ctx.strokeStyle = "#78909C";
-      ctx.lineWidth = 1;
-      for(let i = 0; i < 8; i++) {
-        ctx.beginPath();
-        ctx.moveTo(x-20 + i*5, y+20);
-        ctx.lineTo(x-15 + i*5, y+35);
-        ctx.stroke();
-      }
-    },
-    checkCollision: function(x, y, playerX, playerY) {
-      return Math.abs(playerX - x) < 40 && 
-             Math.abs(playerY - (y+20)) < 20;
-    }
-  },
-  courtLine: { // 球场线
-    width: canvas.width,
-    height: 15,
-    color: "#FFFFFF",
-    draw: function(x, y) {
-      ctx.strokeStyle = this.color;
-      ctx.lineWidth = 5;
-      ctx.setLineDash([20, 10]);
-      ctx.beginPath();
-      ctx.moveTo(0, y+7);
-      ctx.lineTo(canvas.width, y+7);
-      ctx.stroke();
-      ctx.setLineDash([]);
-    },
-    checkCollision: function(x, y, playerX, playerY) {
-      return !player.jumping && Math.abs(playerY - (y+7)) < 25;
-    }
-  },
-  movingBall: { // 移动的篮球
-    width: 40,
-    height: 40,
-    color: "#FF5722",
-    speedX: 0,
-    draw: function(x, y, frame) {
-      ctx.fillStyle = this.color;
-      ctx.beginPath();
-      ctx.arc(x, y, 20, 0, Math.PI*2);
-      ctx.fill();
-      
-      // 篮球纹路
-      ctx.strokeStyle = "#000";
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(x-15, y);
-      ctx.lineTo(x+15, y);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(x, y-15);
-      ctx.lineTo(x, y+15);
-      ctx.stroke();
-      
-      // 运动轨迹
-      ctx.strokeStyle = "rgba(255,255,255,0.3)";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(x, y, 25, 0, Math.PI*2);
-      ctx.stroke();
-    },
-    checkCollision: function(x, y, playerX, playerY) {
-      const dx = playerX - x;
-      const dy = playerY - y;
-      return Math.sqrt(dx*dx + dy*dy) < 35;
-    }
-  },
-  threePointLine: { // 三分线（需要跳跃）
-    width: 120,
-    height: 50,
-    color: "#FFD700",
-    draw: function(x, y) {
-      ctx.strokeStyle = this.color;
-      ctx.lineWidth = 8;
-      ctx.beginPath();
-      ctx.arc(x, y+25, 60, Math.PI, Math.PI*2);
-      ctx.stroke();
-      
-      // 提示文字
-      ctx.fillStyle = "#FFD700";
-      ctx.font = "bold 16px Arial";
-      ctx.textAlign = "center";
-      ctx.fillText("JUMP!", x, y+15);
-    },
-    checkCollision: function(x, y, playerX, playerY) {
-      return Math.abs(playerX - x) < 70 && 
-             Math.abs(playerY - (y+25)) < 30 &&
-             !player.jumping;
-    }
-  }
-};
-
-function spawnObstacle() {
-  if(Math.random() < obstacleSpawnRate) {
-    const types = Object.keys(obstacleTypes);
-    let type = types[Math.floor(Math.random() * types.length)];
-    
-    // 根据难度调整障碍物类型
-    if(difficultyLevel >= 3) {
-      // 高难度时更多移动篮球
-      if(Math.random() < 0.4) type = "movingBall";
-    }
-    if(difficultyLevel >= 5) {
-      // 更高难度时组合障碍
-      if(Math.random() < 0.3) {
-        spawnObstacle(); // 连续生成两个
-      }
-    }
-    
-    const lane = lanes[Math.floor(Math.random() * lanes.length)];
-    const obstacle = {
-      type: type,
-      lane: lane,
-      y: -100,
-      passed: false,
-      id: Date.now() + Math.random()
-    };
-    
-    if(type === "movingBall") {
-      obstacle.speedX = (Math.random() - 0.5) * 8;
-    }
-    
-    obstacles.push(obstacle);
-  }
-}
-
-/* ===== 奖励物品 ===== */
-let bonuses = [];
-function spawnBonus() {
-  if(frame - lastBonusTime > 300 && Math.random() < 0.05) {
-    bonuses.push({
-      type: Math.random() < 0.7 ? "score" : "speedBoost",
-      lane: lanes[Math.floor(Math.random() * lanes.length)],
-      y: -50,
-      width: 30,
-      height: 30
-    });
-    lastBonusTime = frame;
-  }
-}
-
-/* ===== 输入控制 ===== */
-let touchX = null;
-let keys = {};
-
-canvas.addEventListener("touchstart", e => {
-  touchX = e.touches[0].clientX;
-});
-
-canvas.addEventListener("touchend", e => {
-  if(state !== "play") return;
-  
-  const dx = e.changedTouches[0].clientX - touchX;
-  if(Math.abs(dx) > 40) {
-    if(dx > 0 && player.lane < 1) player.lane++;
-    if(dx < 0 && player.lane > -1) player.lane--;
-    touchX = null;
-  } else if(!player.jumping) {
-    startJump();
-  } else if(player.jumping && !player.doubleJumpUsed && 
-            characters[selectedCharacter].special === "doubleJump") {
-    // 二段跳
-    player.jumpT = Math.PI/2;
-    player.doubleJumpUsed = true;
-  }
-});
-
-document.addEventListener("keydown", e => {
-  keys[e.key] = true;
-  
-  if(state === "play") {
-    if(e.key === "ArrowLeft" && player.lane > -1) player.lane--;
-    if(e.key === "ArrowRight" && player.lane < 1) player.lane++;
-    if((e.key === " " || e.key === "ArrowUp") && !player.jumping) {
-      startJump();
-    }
-  }
-});
-
-document.addEventListener("keyup", e => {
-  keys[e.key] = false;
-});
-
-function startJump() {
-  player.jumping = true;
-  player.jumpT = 0;
-  player.doubleJumpUsed = false;
-}
-
-/* ===== UI界面 ===== */
-function renderUI() {
-  const ui = document.getElementById("ui");
-  const characterSelect = document.getElementById("characterSelect");
-  
-  if(state === "character") {
-    characterSelect.style.display = "block";
-    characterSelect.innerHTML = `
-      <h2>选择你的角色</h2>
-      <div style="display:flex;flex-wrap:wrap;justify-content:center;">
-        ${Object.keys(characters).map(char => `
-          <div class="charOption" onclick="selectCharacter('${char}')">
-            <div style="width:100px;height:100px;border-radius:50%;background:${characters[char].color};display:flex;align-items:center;justify-content:center;">
-              <div style="width:60px;height:60px;border-radius:50%;background:#fff;"></div>
-            </div>
-            <h3>${char}</h3>
-            <p>特殊能力: ${
-              characters[char].special === "doubleJump" ? "二段跳" :
-              characters[char].special === "fast" ? "快速移动" :
-              characters[char].special === "highJump" ? "高跳" :
-              characters[char].special === "slowTime" ? "时间减缓" : ""
-            }</p>
-          </div>
-        `).join('')}
-      </div>
-    `;
-    ui.innerHTML = "";
-  } else if(state === "start") {
-    characterSelect.style.display = "none";
-    ui.innerHTML = `
-      <h1>🏀 家庭篮球跑酷 🏀</h1>
-      <p>滑动切换轨道 · 点击/空格跳跃 · 避开障碍物</p>
-      <button onclick="showCharacterSelect()">选择角色</button>
-      <p>最高分：${best}</p>
-      <p style="font-size:12px;color:#aaa;">不同角色有不同特殊能力！</p>
-    `;
-  } else if(state === "over") {
-    characterSelect.style.display = "none";
-    let comment = "";
-    if(score < 50) comment = "继续练习！";
-    else if(score < 100) comment = "不错哦！";
-    else if(score < 200) comment = "太棒了！";
-    else comment = "你是篮球大师！";
-    
-    ui.innerHTML = `
-      <h2>游戏结束</h2>
-      <p>得分：${score}</p>
-      <p>${comment}</p>
-      <p>最高分：${best}</p>
-      <button onclick="showCharacterSelect()">选择角色重玩</button>
-      <button onclick="startGame()">再来一局</button>
-    `;
-  } else {
-    characterSelect.style.display = "none";
-    ui.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div>
-          角色: ${selectedCharacter} | 
-          分数: ${score} | 
-          速度: ${speed.toFixed(1)} | 
-          难度: ${difficultyLevel}
-        </div>
-        <button onclick="state='over'">暂停</button>
-      </div>
-    `;
-  }
-}
-
-function showCharacterSelect() {
-  state = "character";
-  renderUI();
-}
-
-function selectCharacter(char) {
-  selectedCharacter = char;
-  startGame();
-}
-
-/* ===== 游戏逻辑 ===== */
-function startGame() {
-  state = "play";
-  score = 0;
-  speed = 4;
-  frame = 0;
-  obstacles = [];
-  bonuses = [];
-  player.lane = 0;
-  player.jumping = false;
-  player.doubleJumpUsed = false;
-  player.specialCooldown = 0;
-  difficultyLevel = 1;
-  obstacleSpawnRate = 0.18;
-  initBuildings();
-  renderUI();
-}
-
-function updateDifficulty() {
-  difficultyLevel = Math.floor(score / 50) + 1;
-  speed = 4 + difficultyLevel * 0.5;
-  obstacleSpawnRate = 0.18 + difficultyLevel * 0.02;
-  
-  // 应用角色特殊能力
-  const char = characters[selectedCharacter];
-  if(char.special === "fast") {
-    speed += 1;
-  } else if(char.special === "slowTime" && player.specialCooldown <= 0) {
-    if(score % 100 === 0 && score > 0) {
-      speed -= 2;
-      player.specialCooldown = 60;
-    }
-  }
-  
-  if(player.specialCooldown > 0) player.specialCooldown--;
-}
-
-function drawBackground() {
-  // 天空渐变
-  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  gradient.addColorStop(0, "#1a237e");
-  gradient.addColorStop(1, "#283593");
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  
-  // 星星
-  ctx.fillStyle = "#FFFFFF";
-  for(let i = 0; i < 50; i++) {
-    const x = (frame * 0.1 + i * 100) % canvas.width;
-    const y = (i * 20) % canvas.height;
-    ctx.beginPath();
-    ctx.arc(x, y, Math.random() * 1.5, 0, Math.PI*2);
-    ctx.fill();
-  }
-  
-  // 城市建筑
-  buildings.forEach(building => {
-    const x = (building.x - frame * 0.5) % canvas.width;
-    if(x + building.width > 0) {
-      ctx.fillStyle = building.color;
-      ctx.fillRect(x, canvas.height - building.height, building.width, building.height);
-      
-      // 窗户
-      ctx.fillStyle = "#FFD740";
-      for(let i = 0; i < building.windows; i++) {
-        const wx = x + 10 + (i % 3) * 20;
-        const wy = canvas.height - building.height + 20 + Math.floor(i / 3) * 30;
-        if(wy < canvas.height - 30) {
-          ctx.fillRect(wx, wy, 8, 12);
+    start() {
+        if (!this.running) {
+            this.running = true;
+            this.lastTime = performance.now();
+            this.rafId = requestAnimationFrame(this.loop.bind(this));
         }
-      }
     }
-  });
-  
-  // 街道
-  ctx.fillStyle = "#424242";
-  ctx.fillRect(0, canvas.height * 0.8, canvas.width, canvas.height * 0.2);
-  
-  // 街道线
-  ctx.strokeStyle = "#FFD740";
-  ctx.lineWidth = 3;
-  ctx.setLineDash([30, 20]);
-  ctx.beginPath();
-  ctx.moveTo(0, canvas.height * 0.85);
-  ctx.lineTo(canvas.width, canvas.height * 0.85);
-  ctx.stroke();
-  ctx.setLineDash([]);
+
+    stop() {
+        if (this.running) {
+            this.running = false;
+            if (this.rafId) {
+                cancelAnimationFrame(this.rafId);
+                this.rafId = null;
+            }
+        }
+    }
+
+    loop(currentTime) {
+        if (!this.running) return;
+
+        const deltaTime = currentTime - this.lastTime;
+        this.lastTime = currentTime;
+
+        // 限制最大 deltaTime 防止卡顿导致的巨大跳跃
+        const maxDelta = 1000; // 1秒
+        const clampedDelta = Math.min(deltaTime, maxDelta);
+
+        this.accumulator += clampedDelta;
+
+        while (this.accumulator >= this.delta) {
+            this.update(this.delta / 1000);
+            this.accumulator -= this.delta;
+        }
+
+        this.render();
+
+        this.rafId = requestAnimationFrame(this.loop.bind(this));
+    }
 }
 
-function drawPlayer() {
-  const char = characters[selectedCharacter];
-  let py = player.y;
-  
-  if(player.jumping) {
-    player.jumpT += 0.1;
-    const jumpHeight = char.special === "highJump" ? 160 : 120;
-    py -= Math.sin(player.jumpT) * jumpHeight;
-    if(player.jumpT > Math.PI) {
-      player.jumping = false;
-      player.doubleJumpUsed = false;
+// 初始化游戏
+class Game {
+    constructor() {
+        this.canvas = document.getElementById('game');
+        this.ctx = this.canvas.getContext('2d');
+        this.ui = document.getElementById('ui');
+        
+        this.state = 'start';
+        this.score = 0;
+        this.best = localStorage.getItem('bestScore') || 0;
+        this.speed = 4;
+        this.frame = 0;
+        this.selectedCharacter = '爸爸';
+        this.difficultyLevel = 1;
+        this.obstacleSpawnRate = 0.18;
+        this.lastBonusTime = 0;
+        
+        this.player = {
+            lane: 0,
+            y: 0,
+            baseY: 0,
+            jumping: false,
+            jumpT: 0,
+            doubleJumpUsed: false,
+            specialCooldown: 0
+        };
+        
+        this.lanes = [-1, 0, 1];
+        this.buildings = [];
+        this.obstacles = [];
+        this.bonuses = [];
+        
+        this.touchStartX = null;
+        this.touchStartY = null;
+        this.lastTouchTime = 0;
+        
+        this.gameLoop = null;
+        this.resizeTimeout = null;
+        
+        this.init();
     }
-  }
-  
-  char.draw(laneX(player.lane), py, player.jumping, frame);
-  
-  // 特殊能力指示器
-  if(char.special === "doubleJump" && player.jumping && !player.doubleJumpUsed) {
-    ctx.fillStyle = "#00E5FF";
-    ctx.font = "12px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText("可二段跳", laneX(player.lane), py - 80);
-  }
+
+    init() {
+        // 设置 canvas 为设备像素比
+        this.setCanvasSize();
+        
+        // 初始化游戏数据
+        this.initBuildings();
+        
+        // 绑定事件
+        this.bindEvents();
+        
+        // 初始渲染
+        this.renderUI();
+        
+        // 开始游戏循环
+        this.startGameLoop();
+    }
+
+    setCanvasSize() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2); // 限制最大 DPR 为 2
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        
+        // 设置 canvas 显示尺寸
+        this.canvas.style.width = width + 'px';
+        this.canvas.style.height = height + 'px';
+        
+        // 设置 canvas 实际渲染尺寸
+        this.canvas.width = Math.floor(width * dpr);
+        this.canvas.height = Math.floor(height * dpr);
+        
+        // 缩放上下文以匹配 DPR
+        this.ctx.scale(dpr, dpr);
+        
+        // 更新游戏参数
+        this.player.baseY = height * 0.7;
+        this.player.y = this.player.baseY;
+        
+        // 重新初始化建筑
+        this.initBuildings();
+    }
+
+    initBuildings() {
+        this.buildings = [];
+        const width = this.canvas.width / (window.devicePixelRatio || 1);
+        const height = this.canvas.height / (window.devicePixelRatio || 1);
+        
+        for (let i = 0; i < 15; i++) {
+            this.buildings.push({
+                x: Math.random() * width,
+                width: 40 + Math.random() * 80,
+                height: 80 + Math.random() * 200,
+                color: `hsl(${220 + Math.random() * 40}, 60%, ${30 + Math.random() * 20}%)`,
+                windows: Math.floor(Math.random() * 8) + 3
+            });
+        }
+    }
+
+    bindEvents() {
+        // 窗口大小变化
+        window.addEventListener('resize', () => {
+            clearTimeout(this.resizeTimeout);
+            this.resizeTimeout = setTimeout(() => {
+                this.setCanvasSize();
+            }, 100);
+        });
+
+        // 触摸事件
+        this.canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            this.touchStartX = touch.clientX;
+            this.touchStartY = touch.clientY;
+            this.lastTouchTime = Date.now();
+        }, { passive: false });
+
+        this.canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+        }, { passive: false });
+
+        this.canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (this.state !== 'play') return;
+            
+            const touch = e.changedTouches[0];
+            const dx = touch.clientX - this.touchStartX;
+            const dy = touch.clientY - this.touchStartY;
+            const timeDiff = Date.now() - this.lastTouchTime;
+            
+            // 防止误触
+            if (timeDiff > 1000) return;
+            
+            // 判断是滑动还是点击
+            if (Math.abs(dx) > 30 || Math.abs(dy) > 30) {
+                // 滑动换道
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    if (dx > 30 && this.player.lane < 1) this.player.lane++;
+                    if (dx < -30 && this.player.lane > -1) this.player.lane--;
+                }
+            } else {
+                // 点击跳跃
+                if (!this.player.jumping) {
+                    this.startJump();
+                } else if (this.player.jumping && !this.player.doubleJumpUsed && 
+                          this.characters[this.selectedCharacter].special === 'doubleJump') {
+                    // 二段跳
+                    this.player.jumpT = Math.PI / 2;
+                    this.player.doubleJumpUsed = true;
+                }
+            }
+            
+            this.touchStartX = null;
+            this.touchStartY = null;
+        }, { passive: false });
+
+        // 键盘事件
+        document.addEventListener('keydown', (e) => {
+            if (this.state === 'play') {
+                if (e.key === 'ArrowLeft' && this.player.lane > -1) this.player.lane--;
+                if (e.key === 'ArrowRight' && this.player.lane < 1) this.player.lane++;
+                if ((e.key === ' ' || e.key === 'ArrowUp') && !this.player.jumping) {
+                    this.startJump();
+                }
+            }
+            
+            // 阻止空格键滚动页面
+            if (e.key === ' ') {
+                e.preventDefault();
+            }
+        });
+
+        // 防止页面滚动
+        document.addEventListener('touchmove', (e) => {
+            if (this.state === 'play') {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    }
+
+    startJump() {
+        this.player.jumping = true;
+        this.player.jumpT = 0;
+        this.player.doubleJumpUsed = false;
+    }
+
+    startGameLoop() {
+        if (this.gameLoop) {
+            this.gameLoop.stop();
+        }
+        
+        this.gameLoop = new GameLoop(
+            (deltaTime) => this.update(deltaTime),
+            () => this.render()
+        );
+        
+        this.gameLoop.start();
+    }
+
+    update(deltaTime) {
+        if (this.state !== 'play') return;
+        
+        this.frame++;
+        
+        // 更新难度
+        this.updateDifficulty();
+        
+        // 生成障碍物和奖励
+        if (this.frame % Math.max(30, 60 - this.difficultyLevel * 5) === 0) {
+            this.spawnObstacle();
+        }
+        this.spawnBonus();
+        
+        // 更新玩家位置
+        if (this.player.jumping) {
+            this.player.jumpT += 0.1 * deltaTime * 60;
+            const char = this.characters[this.selectedCharacter];
+            const jumpHeight = char.special === 'highJump' ? 160 : 120;
+            this.player.y = this.player.baseY - Math.sin(this.player.jumpT) * jumpHeight;
+            if (this.player.jumpT > Math.PI) {
+                this.player.jumping = false;
+                this.player.doubleJumpUsed = false;
+                this.player.y = this.player.baseY;
+            }
+        }
+        
+        // 更新障碍物位置
+        this.obstacles.forEach(obs => {
+            obs.y += this.speed * deltaTime * 60;
+            
+            if (obs.type === 'movingBall') {
+                obs.lane += obs.speedX / (this.canvas.width * 0.25);
+                if (obs.lane < -1) {
+                    obs.lane = -1;
+                    obs.speedX *= -1;
+                }
+                if (obs.lane > 1) {
+                    obs.lane = 1;
+                    obs.speedX *= -1;
+                }
+            }
+        });
+        
+        // 更新奖励位置
+        this.bonuses.forEach(bonus => {
+            bonus.y += this.speed * deltaTime * 60;
+        });
+        
+        // 检查碰撞
+        this.checkCollisions();
+        
+        // 每帧得分
+        this.score += 0.1 * deltaTime * 60;
+        
+        // 清理超出屏幕的对象
+        this.cleanupObjects();
+    }
+
+    render() {
+        // 清除画布
+        const width = this.canvas.width / (window.devicePixelRatio || 1);
+        const height = this.canvas.height / (window.devicePixelRatio || 1);
+        this.ctx.clearRect(0, 0, width, height);
+        
+        if (this.state !== 'play') return;
+        
+        // 绘制背景
+        this.drawBackground();
+        
+        // 绘制轨道
+        this.drawLanes();
+        
+        // 绘制障碍物
+        this.obstacles.forEach(obs => {
+            this.drawObstacle(obs);
+        });
+        
+        // 绘制奖励
+        this.bonuses.forEach(bonus => {
+            this.drawBonus(bonus);
+        });
+        
+        // 绘制玩家
+        this.drawPlayer();
+        
+        // 更新 UI 分数显示
+        this.updateScoreDisplay();
+    }
+
+    drawBackground() {
+        const width = this.canvas.width / (window.devicePixelRatio || 1);
+        const height = this.canvas.height / (window.devicePixelRatio || 1);
+        
+        // 天空渐变
+        const gradient = this.ctx.createLinearGradient(0, 0, 0, height);
+        gradient.addColorStop(0, '#1a237e');
+        gradient.addColorStop(1, '#283593');
+        this.ctx.fillStyle = gradient;
+        this.ctx.fillRect(0, 0, width, height);
+        
+        // 星星（使用整数坐标避免抖动）
+        this.ctx.fillStyle = '#FFFFFF';
+        for (let i = 0; i < 30; i++) {
+            const x = Math.floor((this.frame * 0.05 + i * 73.7) % width);
+            const y = Math.floor((i * 37.3) % height * 0.7);
+            this.ctx.beginPath();
+            this.ctx.arc(x, y, Math.random() * 1.2 + 0.3, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
+        
+        // 城市建筑
+        this.buildings.forEach(building => {
+            const x = (building.x - this.frame * 0.3) % (width + building.width) - building.width;
+            if (x + building.width > 0) {
+                this.ctx.fillStyle = building.color;
+                this.ctx.fillRect(x, height - building.height, building.width, building.height);
+                
+                // 窗户
+                this.ctx.fillStyle = '#FFD740';
+                for (let i = 0; i < building.windows; i++) {
+                    const wx = Math.floor(x + 10 + (i % 3) * 20);
+                    const wy = Math.floor(height - building.height + 20 + Math.floor(i / 3) * 30);
+                    if (wy < height - 30) {
+                        this.ctx.fillRect(wx, wy, 6, 10);
+                    }
+                }
+            }
+        });
+        
+        // 街道
+        this.ctx.fillStyle = '#424242';
+        this.ctx.fillRect(0, height * 0.8, width, height * 0.2);
+        
+        // 街道线
+        this.ctx.strokeStyle = '#FFD740';
+        this.ctx.lineWidth = 2;
+        this.ctx.setLineDash([20, 15]);
+        this.ctx.beginPath();
+        this.ctx.moveTo(0, height * 0.85);
+        this.ctx.lineTo(width, height * 0.85);
+        this.ctx.stroke();
+        this.ctx.setLineDash([]);
+    }
+
+    drawLanes() {
+        const width = this.canvas.width / (window.devicePixelRatio || 1);
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        this.ctx.lineWidth = 1;
+        
+        this.lanes.forEach(lane => {
+            const x = width / 2 + lane * width * 0.25;
+            this.ctx.beginPath();
+            this.ctx.moveTo(Math.floor(x), 0);
+            this.ctx.lineTo(Math.floor(x), this.canvas.height);
+            this.ctx.stroke();
+        });
+    }
+
+    laneX(lane) {
+        const width = this.canvas.width / (window.devicePixelRatio || 1);
+        return width / 2 + lane * width * 0.25;
+    }
+
+    // 角色定义和绘图方法（简化版）
+    characters = {
+        '爸爸': {
+            color: '#FF9800',
+            special: 'doubleJump',
+            draw: (ctx, x, y, jumping, frame) => {
+                // 简化的绘图逻辑
+                ctx.fillStyle = '#FF9800';
+                ctx.beginPath();
+                ctx.arc(x, y - 20, 20, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = '#FF5722';
+                ctx.beginPath();
+                ctx.arc(x + 15, y - (jumping ? 15 : 5), 8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        },
+        // 其他角色类似简化
+    };
+
+    drawPlayer() {
+        const char = this.characters[this.selectedCharacter];
+        const x = this.laneX(this.player.lane);
+        char.draw(this.ctx, Math.floor(x), Math.floor(this.player.y), this.player.jumping, this.frame);
+    }
+
+    drawObstacle(obstacle) {
+        const x = this.laneX(obstacle.lane);
+        const type = obstacle.type;
+        
+        this.ctx.save();
+        
+        if (type === 'hoop') {
+            // 篮筐
+            this.ctx.fillStyle = '#FFFFFF';
+            this.ctx.fillRect(Math.floor(x - 40), Math.floor(obstacle.y), 80, 40);
+            
+            this.ctx.fillStyle = '#FF5722';
+            this.ctx.beginPath();
+            this.ctx.ellipse(Math.floor(x), Math.floor(obstacle.y + 20), 25, 10, 0, 0, Math.PI * 2);
+            this.ctx.fill();
+        } else if (type === 'courtLine') {
+            // 球场线
+            this.ctx.strokeStyle = '#FFFFFF';
+            this.ctx.lineWidth = 3;
+            this.ctx.setLineDash([15, 10]);
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, Math.floor(obstacle.y + 7));
+            this.ctx.lineTo(this.canvas.width, Math.floor(obstacle.y + 7));
+            this.ctx.stroke();
+            this.ctx.setLineDash([]);
+        } else if (type === 'movingBall') {
+            // 移动篮球
+            this.ctx.fillStyle = '#FF5722';
+            this.ctx.beginPath();
+            this.ctx.arc(Math.floor(x), Math.floor(obstacle.y), 15, 0, Math.PI * 2);
+            this.ctx.fill();
+        } else if (type === 'threePointLine') {
+            // 三分线
+            this.ctx.strokeStyle = '#FFD700';
+            this.ctx.lineWidth = 4;
+            this.ctx.beginPath();
+            this.ctx.arc(Math.floor(x), Math.floor(obstacle.y + 25), 50, Math.PI, Math.PI * 2);
+            this.ctx.stroke();
+        }
+        
+        this.ctx.restore();
+    }
+
+    drawBonus(bonus) {
+        const x = this.laneX(bonus.lane);
+        
+        this.ctx.fillStyle = bonus.type === 'score' ? '#FFD700' : '#00E5FF';
+        this.ctx.beginPath();
+        this.ctx.arc(Math.floor(x), Math.floor(bonus.y), 12, 0, Math.PI * 2);
+        this.ctx.fill();
+        
+        this.ctx.fillStyle = '#000';
+        this.ctx.font = 'bold 16px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText(bonus.type === 'score' ? '★' : '⚡', Math.floor(x), Math.floor(bonus.y));
+    }
+
+    updateScoreDisplay() {
+        const scoreEl = document.querySelector('.score-display');
+        if (scoreEl) {
+            scoreEl.textContent = `得分: ${Math.floor(this.score)}`;
+        }
+    }
+
+    updateDifficulty() {
+        this.difficultyLevel = Math.floor(this.score / 50) + 1;
+        this.speed = 4 + this.difficultyLevel * 0.5;
+        this.obstacleSpawnRate = 0.18 + this.difficultyLevel * 0.02;
+        
+        if (this.characters[this.selectedCharacter].special === 'slowTime' && this.player.specialCooldown <= 0) {
+            if (Math.floor(this.score) % 100 === 0 && this.score > 0) {
+                this.speed -= 2;
+                this.player.specialCooldown = 60;
+            }
+        }
+        
+        if (this.player.specialCooldown > 0) this.player.specialCooldown--;
+    }
+
+    spawnObstacle() {
+        if (Math.random() < this.obstacleSpawnRate) {
+            const types = ['hoop', 'courtLine', 'movingBall', 'threePointLine'];
+            let type = types[Math.floor(Math.random() * types.length)];
+            
+            if (this.difficultyLevel >= 3 && Math.random() < 0.4) {
+                type = 'movingBall';
+            }
+            
+            const lane = this.lanes[Math.floor(Math.random() * this.lanes.length)];
+            const obstacle = {
+                type: type,
+                lane: lane,
+                y: -100,
+                passed: false,
+                id: Date.now() + Math.random()
+            };
+            
+            if (type === 'movingBall') {
+                obstacle.speedX = (Math.random() - 0.5) * 6;
+            }
+            
+            this.obstacles.push(obstacle);
+        }
+    }
+
+    spawnBonus() {
+        if (this.frame - this.lastBonusTime > 300 && Math.random() < 0.05) {
+            this.bonuses.push({
+                type: Math.random() < 0.7 ? 'score' : 'speedBoost',
+                lane: this.lanes[Math.floor(Math.random() * this.lanes.length)],
+                y: -50
+            });
+            this.lastBonusTime = this.frame;
+        }
+    }
+
+    checkCollisions() {
+        const playerX = this.laneX(this.player.lane);
+        
+        // 检查障碍物碰撞
+        for (let i = this.obstacles.length - 1; i >= 0; i--) {
+            const obs = this.obstacles[i];
+            const obsX = this.laneX(obs.lane);
+            
+            if (!obs.passed && obs.y > this.player.y - 50 && obs.y < this.player.y + 50) {
+                let collision = false;
+                const dx = playerX - obsX;
+                const dy = this.player.y - obs.y;
+                
+                if (obs.type === 'hoop') {
+                    collision = Math.abs(dx) < 40 && Math.abs(dy - 20) < 30;
+                } else if (obs.type === 'courtLine') {
+                    collision = !this.player.jumping && Math.abs(dy - 7) < 30;
+                } else if (obs.type === 'movingBall') {
+                    collision = Math.sqrt(dx * dx + dy * dy) < 25;
+                } else if (obs.type === 'threePointLine') {
+                    collision = Math.abs(dx) < 60 && Math.abs(dy - 25) < 25 && !this.player.jumping;
+                }
+                
+                if (collision) {
+                    this.gameOver();
+                    return;
+                }
+                
+                if (obs.y > this.player.y && !obs.passed) {
+                    obs.passed = true;
+                    this.score += 5;
+                }
+            }
+        }
+        
+        // 检查奖励碰撞
+        for (let i = this.bonuses.length - 1; i >= 0; i--) {
+            const bonus = this.bonuses[i];
+            const bonusX = this.laneX(bonus.lane);
+            const dx = playerX - bonusX;
+            const dy = this.player.y - bonus.y;
+            
+            if (Math.sqrt(dx * dx + dy * dy) < 25) {
+                if (bonus.type === 'score') {
+                    this.score += 50;
+                } else if (bonus.type === 'speedBoost') {
+                    this.speed += 2;
+                    setTimeout(() => {
+                        if (this.speed > 4) this.speed -= 2;
+                    }, 3000);
+                }
+                this.bonuses.splice(i, 1);
+            }
+        }
+    }
+
+    cleanupObjects() {
+        // 清理障碍物
+        this.obstacles = this.obstacles.filter(obs => obs.y < this.canvas.height + 100);
+        
+        // 清理奖励
+        this.bonuses = this.bonuses.filter(bonus => bonus.y < this.canvas.height + 50);
+    }
+
+    gameOver() {
+        this.state = 'over';
+        this.best = Math.max(this.best, Math.floor(this.score));
+        localStorage.setItem('bestScore', this.best);
+        this.renderUI();
+    }
+
+    renderUI() {
+        this.ui.innerHTML = '';
+        
+        if (this.state === 'start') {
+            this.ui.innerHTML = `
+                <div class="ui-panel" style="position: absolute; top: 50%; transform: translateY(-50%); width: 100%;">
+                    <h1>🏀 家庭篮球跑酷 🏀</h1>
+                    <p>滑动切换轨道 · 点击跳跃 · 避开障碍物</p>
+                    <button onclick="game.showCharacterSelect()">开始游戏</button>
+                    <p>最高分：${this.best}</p>
+                    <p style="color: #aaa; font-size: 14px;">不同角色有不同特殊能力！</p>
+                </div>
+                <div class="controls-hint">
+                    提示：左右滑动换道，点击屏幕跳跃
+                </div>
+            `;
+        } else if (this.state === 'character') {
+            this.ui.innerHTML = `
+                <div class="character-select ui-panel">
+                    <h2>选择你的角色</h2>
+                    <div class="char-grid">
+                        <div class="char-option ${this.selectedCharacter === '爸爸' ? 'selected' : ''}" 
+                             onclick="game.selectCharacter('爸爸')">
+                            <div class="char-avatar" style="background: #FF9800;">👨</div>
+                            <div class="char-name">爸爸</div>
+                            <div class="char-ability">特殊：二段跳</div>
+                        </div>
+                        <!-- 其他角色类似 -->
+                    </div>
+                    <button onclick="game.startGame()">开始跑酷</button>
+                </div>
+            `;
+        } else if (this.state === 'play') {
+            this.ui.innerHTML = `
+                <div class="score-display">得分: ${Math.floor(this.score)}</div>
+                <div class="controls-hint">
+                    得分: ${Math.floor(this.score)} | 速度: ${this.speed.toFixed(1)} | 难度: ${this.difficultyLevel}
+                </div>
+            `;
+        } else if (this.state === 'over') {
+            let comment = '';
+            const finalScore = Math.floor(this.score);
+            if (finalScore < 50) comment = '继续练习！';
+            else if (finalScore < 100) comment = '不错哦！';
+            else if (finalScore < 200) comment = '太棒了！';
+            else comment = '你是篮球大师！';
+            
+            this.ui.innerHTML = `
+                <div class="game-over ui-panel">
+                    <h2>游戏结束</h2>
+                    <p>得分：${finalScore}</p>
+                    <p>${comment}</p>
+                    <p>最高分：${this.best}</p>
+                    <button onclick="game.showCharacterSelect()">选择角色重玩</button>
+                    <button onclick="game.startGame()">再来一局</button>
+                </div>
+            `;
+        }
+        
+        // 绑定事件
+        this.bindUIEvents();
+    }
+
+    bindUIEvents() {
+        // 为所有按钮添加事件代理
+        setTimeout(() => {
+            const buttons = this.ui.querySelectorAll('button');
+            buttons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+            });
+        }, 0);
+    }
+
+    showCharacterSelect() {
+        this.state = 'character';
+        this.renderUI();
+    }
+
+    selectCharacter(char) {
+        this.selectedCharacter = char;
+    }
+
+    startGame() {
+        this.state = 'play';
+        this.score = 0;
+        this.speed = 4;
+        this.frame = 0;
+        this.obstacles = [];
+        this.bonuses = [];
+        this.player.lane = 0;
+        this.player.jumping = false;
+        this.player.doubleJumpUsed = false;
+        this.player.specialCooldown = 0;
+        this.difficultyLevel = 1;
+        this.obstacleSpawnRate = 0.18;
+        this.initBuildings();
+        this.renderUI();
+    }
 }
 
-function checkCollisions() {
-  const playerX = laneX(player.lane);
-  const playerY = player.jumping ? 
-    player.y - Math.sin(player.jumpT) * 120 : player.y;
-  
-  // 检查障碍物碰撞
-  for(let i = obstacles.length - 1; i >= 0; i--) {
-    const obs = obstacles[i];
-    const obsX = laneX(obs.lane) + (obs.speedX || 0);
+// 启动游戏
+let game;
+
+window.addEventListener('load', () => {
+    // 设置视口
+    document.documentElement.style.height = '100%';
+    document.body.style.height = '100%';
     
-    if(!obs.passed && obs.y > playerY - 50 && obs.y < playerY + 50) {
-      const type = obstacleTypes[obs.type];
-      if(type.checkCollision(obsX, obs.y, playerX, playerY)) {
-        gameOver();
-        return;
-      }
-      
-      // 得分
-      if(obs.y > playerY && !obs.passed) {
-        obs.passed = true;
-        score += 5;
-      }
-    }
+    // 禁用双击缩放
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', (e) => {
+        const now = Date.now();
+        if (now - lastTouchEnd <= 300) {
+            e.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, false);
     
-    // 移动篮球的水平移动
-    if(obs.type === "movingBall") {
-      obs.lane += obs.speedX / (canvas.width * 0.25);
-      if(obs.lane < -1) {
-        obs.lane = -1;
-        obs.speedX *= -1;
-      }
-      if(obs.lane > 1) {
-        obs.lane = 1;
-        obs.speedX *= -1;
-      }
-    }
+    // 启动游戏
+    game = new Game();
     
-    // 移除超出屏幕的障碍物
-    if(obs.y > canvas.height + 100) {
-      obstacles.splice(i, 1);
-    }
-  }
-  
-  // 检查奖励物品
-  for(let i = bonuses.length - 1; i >= 0; i--) {
-    const bonus = bonuses[i];
-    const bonusX = laneX(bonus.lane);
+    // 阻止右键菜单
+    document.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+    });
+});
+
+// 全屏功能
+function toggleFullscreen() {
+    const doc = window.document;
+    const docEl = doc.documentElement;
     
-    if(Math.abs(playerX - bonusX) < 40 && 
-       Math.abs(playerY - bonus.y) < 40) {
-      if(bonus.type === "score") {
-        score += 50;
-        // 得分特效
-        ctx.fillStyle = "#FFD700";
-        ctx.font = "bold 24px Arial";
-        ctx.textAlign = "center";
-        ctx.fillText("+50", bonusX, bonus.y);
-      } else if(bonus.type === "speedBoost") {
-        speed += 2;
-        setTimeout(() => { if(speed > 4) speed -= 2; }, 3000);
-      }
-      bonuses.splice(i, 1);
-    }
+    const requestFullScreen = docEl.requestFullscreen || 
+                             docEl.mozRequestFullScreen || 
+                             docEl.webkitRequestFullScreen || 
+                             docEl.msRequestFullscreen;
     
-    if(bonus.y > canvas.height + 50) {
-      bonuses.splice(i, 1);
+    const exitFullScreen = doc.exitFullscreen || 
+                          doc.mozCancelFullScreen || 
+                          doc.webkitExitFullscreen || 
+                          doc.msExitFullscreen;
+    
+    if (!doc.fullscreenElement && !doc.mozFullScreenElement && 
+        !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
+        requestFullScreen.call(docEl).catch(err => {
+            console.log(`全屏请求失败: ${err.message}`);
+        });
+    } else {
+        exitFullScreen.call(doc);
     }
-  }
 }
 
-function gameOver() {
-  state = "over";
-  best = Math.max(best, score);
-  localStorage.bestScore = best;
-  renderUI();
+// 添加全屏按钮到 UI
+document.addEventListener('DOMContentLoaded', () => {
+    const container = document.getElementById('container');
+    const fullscreenBtn = document.createElement('div');
+    fullscreenBtn.className = 'fullscreen-btn';
+    fullscreenBtn.innerHTML = '⛶';
+    fullscreenBtn.addEventListener('click', toggleFullscreen);
+    container.appendChild(fullscreenBtn);
+});
+
+// 处理方向锁定
+function lockOrientation() {
+    if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(() => {
+            // 锁定失败，继续游戏
+        });
+    }
 }
 
-/* ===== 主游戏循环 ===== */
-function gameLoop() {
-  requestAnimationFrame(gameLoop);
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  
-  if(state !== "play") return;
-  
-  frame++;
-  
-  // 绘制背景
-  drawBackground();
-  
-  // 更新难度
-  updateDifficulty();
-  
-  // 生成障碍物和奖励
-  if(frame % Math.max(30, 60 - difficultyLevel * 5) === 0) {
-    spawnObstacle();
-  }
-  spawnBonus();
-  
-  // 绘制轨道
-  ctx.strokeStyle = "rgba(255,255,255,0.3)";
-  ctx.lineWidth = 2;
-  lanes.forEach(l => {
-    ctx.beginPath();
-    ctx.moveTo(laneX(l), 0);
-    ctx.lineTo(laneX(l), canvas.height);
-    ctx.stroke();
-  });
-  
-  // 绘制玩家
-  drawPlayer();
-  
-  // 更新和绘制障碍物
-  obstacles.forEach(obs => {
-    obs.y += speed;
-    const type = obstacleTypes[obs.type];
-    const x = laneX(obs.lane) + (obs.speedX || 0);
-    type.draw(x, obs.y, frame);
-  });
-  
-  // 更新和绘制奖励物品
-  bonuses.forEach(bonus => {
-    bonus.y += speed;
-    ctx.fillStyle = bonus.type === "score" ? "#FFD700" : "#00E5FF";
-    ctx.beginPath();
-    ctx.arc(laneX(bonus.lane), bonus.y, 15, 0, Math.PI*2);
-    ctx.fill();
-    
-    // 奖励图标
-    ctx.fillStyle = "#000";
-    ctx.font = "bold 20px Arial";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(bonus.type === "score" ? "★" : "⚡", laneX(bonus.lane), bonus.y);
-  });
-  
-  // 检查碰撞
-  checkCollisions();
-  
-  // 每帧得分
-  score += 0.1;
-  
-  // 显示当前分数特效
-  if(frame % 30 === 0) {
-    ctx.fillStyle = "#FFFFFF";
-    ctx.font = "bold 14px Arial";
-    ctx.textAlign = "right";
-    ctx.fillText(`得分: ${Math.floor(score)}`, canvas.width - 20, 50);
-  }
-}
+// 页面可见性变化
+document.addEventListener('visibilitychange', () => {
+    if (game && game.state === 'play' && document.hidden) {
+        game.state = 'paused';
+        game.renderUI();
+    }
+});
 
-// 初始化
-renderUI();
-gameLoop();
-
-// 触摸反馈
-canvas.addEventListener("touchstart", () => {
-  canvas.style.transform = "scale(0.98)";
-  setTimeout(() => {
-    canvas.style.transform = "scale(1)";
-  }, 100);
+// 处理返回键
+window.addEventListener('popstate', (e) => {
+    if (game && game.state === 'play') {
+        e.preventDefault();
+        game.state = 'paused';
+        game.renderUI();
+    }
 });
 </script>
 </body>
