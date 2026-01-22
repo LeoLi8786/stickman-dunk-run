@@ -68,13 +68,11 @@ body {
 
 .ui-panel {
     pointer-events: auto;
-    background: rgba(0, 0, 0, 0.85);
+    background: rgba(0, 0, 0, 0.9);
     border-radius: 20px;
     padding: 25px;
     max-width: 90%;
     margin: 0 auto;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
     border: 2px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -286,92 +284,26 @@ button:active {
     color: white;
     font-size: 20px;
 }
-
-/* 性能优化 */
-.performance-hint {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.9);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
 </style>
 </head>
-<body class="no-scroll">
+<body>
 <div id="container">
     <canvas id="game"></canvas>
     <div id="ui"></div>
 </div>
 
 <script>
-// 性能优化：使用 requestAnimationFrame 的稳定版本
-class GameLoop {
-    constructor(update, render) {
-        this.update = update;
-        this.render = render;
-        this.rafId = null;
-        this.lastTime = 0;
-        this.accumulator = 0;
-        this.delta = 1000 / 60; // 60 FPS
-        this.running = false;
-    }
-
-    start() {
-        if (!this.running) {
-            this.running = true;
-            this.lastTime = performance.now();
-            this.rafId = requestAnimationFrame(this.loop.bind(this));
-        }
-    }
-
-    stop() {
-        if (this.running) {
-            this.running = false;
-            if (this.rafId) {
-                cancelAnimationFrame(this.rafId);
-                this.rafId = null;
-            }
-        }
-    }
-
-    loop(currentTime) {
-        if (!this.running) return;
-
-        const deltaTime = currentTime - this.lastTime;
-        this.lastTime = currentTime;
-
-        // 限制最大 deltaTime 防止卡顿导致的巨大跳跃
-        const maxDelta = 1000; // 1秒
-        const clampedDelta = Math.min(deltaTime, maxDelta);
-
-        this.accumulator += clampedDelta;
-
-        while (this.accumulator >= this.delta) {
-            this.update(this.delta / 1000);
-            this.accumulator -= this.delta;
-        }
-
-        this.render();
-
-        this.rafId = requestAnimationFrame(this.loop.bind(this));
-    }
-}
-
-// 初始化游戏
+// ==================== 游戏核心类 ====================
 class Game {
     constructor() {
         this.canvas = document.getElementById('game');
         this.ctx = this.canvas.getContext('2d');
         this.ui = document.getElementById('ui');
+        this.container = document.getElementById('container');
         
         this.state = 'start';
         this.score = 0;
-        this.best = localStorage.getItem('bestScore') || 0;
+        this.best = parseInt(localStorage.getItem('bestScore')) || 0;
         this.speed = 4;
         this.frame = 0;
         this.selectedCharacter = '爸爸';
@@ -400,49 +332,54 @@ class Game {
         
         this.gameLoop = null;
         this.resizeTimeout = null;
+        this.lastTime = 0;
+        this.accumulator = 0;
+        this.delta = 1000 / 60;
+        
+        // 触摸容错阈值
+        this.TOUCH_THRESHOLD = 20;
         
         this.init();
     }
 
     init() {
-        // 设置 canvas 为设备像素比
         this.setCanvasSize();
-        
-        // 初始化游戏数据
         this.initBuildings();
-        
-        // 绑定事件
         this.bindEvents();
-        
-        // 初始渲染
         this.renderUI();
-        
-        // 开始游戏循环
         this.startGameLoop();
+        
+        // 确保UI元素可以点击
+        setTimeout(() => {
+            const uiElements = this.ui.querySelectorAll('button, .char-option');
+            uiElements.forEach(el => {
+                el.style.pointerEvents = 'auto';
+            });
+        }, 100);
     }
 
     setCanvasSize() {
-        const dpr = Math.min(window.devicePixelRatio || 1, 2); // 限制最大 DPR 为 2
+        // 获取实际显示尺寸
         const width = window.innerWidth;
         const height = window.innerHeight;
         
-        // 设置 canvas 显示尺寸
+        // 设置canvas显示尺寸
         this.canvas.style.width = width + 'px';
         this.canvas.style.height = height + 'px';
         
-        // 设置 canvas 实际渲染尺寸
+        // 设置canvas绘制尺寸（考虑设备像素比）
+        const dpr = window.devicePixelRatio || 1;
         this.canvas.width = Math.floor(width * dpr);
         this.canvas.height = Math.floor(height * dpr);
         
-        // 缩放上下文以匹配 DPR
+        // 缩放上下文
         this.ctx.scale(dpr, dpr);
         
         // 更新游戏参数
         this.player.baseY = height * 0.7;
         this.player.y = this.player.baseY;
         
-        // 重新初始化建筑
-        this.initBuildings();
+        console.log('Canvas尺寸:', width + 'x' + height, 'DPR:', dpr);
     }
 
     initBuildings() {
@@ -467,58 +404,62 @@ class Game {
             clearTimeout(this.resizeTimeout);
             this.resizeTimeout = setTimeout(() => {
                 this.setCanvasSize();
-            }, 100);
+                this.initBuildings();
+            }, 250);
         });
 
-        // 触摸事件
+        // 触摸事件 - 简化版本，直接响应
         this.canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
+            if (this.state !== 'play') return;
+            
             const touch = e.touches[0];
             this.touchStartX = touch.clientX;
             this.touchStartY = touch.clientY;
             this.lastTouchTime = Date.now();
+            
+            // 直接跳跃（简化操作）
+            if (!this.player.jumping) {
+                this.startJump();
+            }
         }, { passive: false });
 
+        // 触摸移动用于换道
         this.canvas.addEventListener('touchmove', (e) => {
             e.preventDefault();
+            if (this.state !== 'play' || !this.touchStartX) return;
+            
+            const touch = e.touches[0];
+            const dx = touch.clientX - this.touchStartX;
+            
+            // 左右滑动换道
+            if (Math.abs(dx) > 50) {
+                if (dx > 0 && this.player.lane < 1) {
+                    this.player.lane++;
+                    this.touchStartX = touch.clientX; // 重置起始点
+                } else if (dx < 0 && this.player.lane > -1) {
+                    this.player.lane--;
+                    this.touchStartX = touch.clientX; // 重置起始点
+                }
+            }
         }, { passive: false });
 
         this.canvas.addEventListener('touchend', (e) => {
             e.preventDefault();
             if (this.state !== 'play') return;
             
-            const touch = e.changedTouches[0];
-            const dx = touch.clientX - this.touchStartX;
-            const dy = touch.clientY - this.touchStartY;
-            const timeDiff = Date.now() - this.lastTouchTime;
-            
-            // 防止误触
-            if (timeDiff > 1000) return;
-            
-            // 判断是滑动还是点击
-            if (Math.abs(dx) > 30 || Math.abs(dy) > 30) {
-                // 滑动换道
-                if (Math.abs(dx) > Math.abs(dy)) {
-                    if (dx > 30 && this.player.lane < 1) this.player.lane++;
-                    if (dx < -30 && this.player.lane > -1) this.player.lane--;
-                }
-            } else {
-                // 点击跳跃
-                if (!this.player.jumping) {
-                    this.startJump();
-                } else if (this.player.jumping && !this.player.doubleJumpUsed && 
-                          this.characters[this.selectedCharacter].special === 'doubleJump') {
-                    // 二段跳
-                    this.player.jumpT = Math.PI / 2;
-                    this.player.doubleJumpUsed = true;
-                }
+            // 二段跳检测
+            if (this.player.jumping && !this.player.doubleJumpUsed && 
+                this.characters[this.selectedCharacter].special === 'doubleJump') {
+                this.player.jumpT = Math.PI / 2;
+                this.player.doubleJumpUsed = true;
             }
             
             this.touchStartX = null;
             this.touchStartY = null;
         }, { passive: false });
 
-        // 键盘事件
+        // 键盘控制（用于测试）
         document.addEventListener('keydown', (e) => {
             if (this.state === 'play') {
                 if (e.key === 'ArrowLeft' && this.player.lane > -1) this.player.lane--;
@@ -526,10 +467,6 @@ class Game {
                 if ((e.key === ' ' || e.key === 'ArrowUp') && !this.player.jumping) {
                     this.startJump();
                 }
-            }
-            
-            // 阻止空格键滚动页面
-            if (e.key === ' ') {
                 e.preventDefault();
             }
         });
@@ -540,6 +477,11 @@ class Game {
                 e.preventDefault();
             }
         }, { passive: false });
+
+        // 点击UI区域
+        this.ui.addEventListener('click', (e) => {
+            // UI点击事件通过冒泡处理
+        });
     }
 
     startJump() {
@@ -550,15 +492,31 @@ class Game {
 
     startGameLoop() {
         if (this.gameLoop) {
-            this.gameLoop.stop();
+            cancelAnimationFrame(this.gameLoop);
         }
         
-        this.gameLoop = new GameLoop(
-            (deltaTime) => this.update(deltaTime),
-            () => this.render()
-        );
+        const gameLoop = (currentTime) => {
+            if (!this.lastTime) this.lastTime = currentTime;
+            
+            const deltaTime = currentTime - this.lastTime;
+            this.lastTime = currentTime;
+            
+            // 限制最大deltaTime
+            const maxDelta = 1000;
+            const clampedDelta = Math.min(deltaTime, maxDelta);
+            
+            this.accumulator += clampedDelta;
+            
+            while (this.accumulator >= this.delta) {
+                this.update(this.delta / 1000);
+                this.accumulator -= this.delta;
+            }
+            
+            this.render();
+            this.gameLoop = requestAnimationFrame(gameLoop);
+        };
         
-        this.gameLoop.start();
+        this.gameLoop = requestAnimationFrame(gameLoop);
     }
 
     update(deltaTime) {
@@ -662,7 +620,7 @@ class Game {
         this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, width, height);
         
-        // 星星（使用整数坐标避免抖动）
+        // 星星
         this.ctx.fillStyle = '#FFFFFF';
         for (let i = 0; i < 30; i++) {
             const x = Math.floor((this.frame * 0.05 + i * 73.7) % width);
@@ -725,70 +683,209 @@ class Game {
         return width / 2 + lane * width * 0.25;
     }
 
-    // 角色定义和绘图方法（简化版）
+    // 完整的角色定义
     characters = {
         '爸爸': {
             color: '#FF9800',
             special: 'doubleJump',
             draw: (ctx, x, y, jumping, frame) => {
-                // 简化的绘图逻辑
+                ctx.save();
                 ctx.fillStyle = '#FF9800';
+                
+                // 胖胖的身体
                 ctx.beginPath();
-                ctx.arc(x, y - 20, 20, 0, Math.PI * 2);
+                ctx.ellipse(x, y - 20, 25, 35, 0, 0, Math.PI * 2);
                 ctx.fill();
                 
-                ctx.fillStyle = '#FF5722';
+                // 头部
                 ctx.beginPath();
-                ctx.arc(x + 15, y - (jumping ? 15 : 5), 8, 0, Math.PI * 2);
+                ctx.arc(x, y - 55, 18, 0, Math.PI * 2);
                 ctx.fill();
+                
+                // 眼睛
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(x - 6, y - 58, 3, 0, Math.PI * 2);
+                ctx.arc(x + 6, y - 58, 3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 嘴巴
+                ctx.beginPath();
+                ctx.arc(x, y - 50, 8, 0.1, Math.PI - 0.1);
+                ctx.stroke();
+                
+                // 篮球
+                const ballY = jumping ? y - 15 : y + 5;
+                ctx.fillStyle = '#ff5722';
+                ctx.beginPath();
+                ctx.arc(x + 25, ballY, 10, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.restore();
             }
         },
-        // 其他角色类似简化
+        'lucky': {
+            color: '#4CAF50',
+            special: 'fast',
+            draw: (ctx, x, y, jumping, frame) => {
+                ctx.save();
+                ctx.fillStyle = '#4CAF50';
+                
+                // 身体
+                ctx.beginPath();
+                ctx.ellipse(x, y - 15, 15, 20, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 头部
+                ctx.beginPath();
+                ctx.arc(x, y - 40, 12, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 眼睛
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(x - 4, y - 42, 4, 0, Math.PI * 2);
+                ctx.arc(x + 4, y - 42, 4, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 帽子
+                ctx.fillStyle = '#2196F3';
+                ctx.beginPath();
+                ctx.ellipse(x, y - 48, 15, 8, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 篮球
+                ctx.fillStyle = '#ff5722';
+                ctx.beginPath();
+                ctx.arc(x + 15, y - 10, 8, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.restore();
+            }
+        },
+        '刘大力': {
+            color: '#E91E63',
+            special: 'highJump',
+            draw: (ctx, x, y, jumping, frame) => {
+                ctx.save();
+                ctx.fillStyle = '#E91E63';
+                
+                // 身体
+                ctx.beginPath();
+                ctx.ellipse(x, y - 20, 18, 25, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 头部
+                ctx.beginPath();
+                ctx.arc(x, y - 48, 15, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 长发
+                ctx.beginPath();
+                ctx.moveTo(x - 15, y - 48);
+                ctx.quadraticCurveTo(x - 25, y - 30, x - 10, y - 20);
+                ctx.quadraticCurveTo(x, y - 25, x, y - 35);
+                ctx.fill();
+                
+                // 灌篮动作
+                const jumpOffset = jumping ? -20 : 0;
+                ctx.fillStyle = '#ff5722';
+                ctx.beginPath();
+                ctx.arc(x + 25, y + jumpOffset, 9, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.restore();
+            }
+        },
+        'nn': {
+            color: '#9C27B0',
+            special: 'slowTime',
+            draw: (ctx, x, y, jumping, frame) => {
+                ctx.save();
+                ctx.fillStyle = '#9C27B0';
+                
+                // 身体
+                ctx.beginPath();
+                ctx.ellipse(x, y - 15, 22, 28, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 头部
+                ctx.beginPath();
+                ctx.arc(x, y - 45, 16, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 银发
+                ctx.fillStyle = '#FFFFFF';
+                ctx.beginPath();
+                ctx.ellipse(x, y - 58, 20, 10, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 老花镜
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(x - 8, y - 43, 6, 0, Math.PI * 2);
+                ctx.arc(x + 8, y - 43, 6, 0, Math.PI * 2);
+                ctx.moveTo(x - 2, y - 43);
+                ctx.lineTo(x + 2, y - 43);
+                ctx.stroke();
+                
+                // 篮球
+                ctx.fillStyle = '#ff5722';
+                ctx.beginPath();
+                ctx.arc(x + 20, y, 8, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.restore();
+            }
+        }
     };
 
     drawPlayer() {
         const char = this.characters[this.selectedCharacter];
-        const x = this.laneX(this.player.lane);
-        char.draw(this.ctx, Math.floor(x), Math.floor(this.player.y), this.player.jumping, this.frame);
+        const x = Math.floor(this.laneX(this.player.lane));
+        const y = Math.floor(this.player.y);
+        char.draw(this.ctx, x, y, this.player.jumping, this.frame);
     }
 
     drawObstacle(obstacle) {
-        const x = this.laneX(obstacle.lane);
-        const type = obstacle.type;
+        const x = Math.floor(this.laneX(obstacle.lane));
+        const y = Math.floor(obstacle.y);
         
         this.ctx.save();
         
-        if (type === 'hoop') {
+        if (obstacle.type === 'hoop') {
             // 篮筐
             this.ctx.fillStyle = '#FFFFFF';
-            this.ctx.fillRect(Math.floor(x - 40), Math.floor(obstacle.y), 80, 40);
+            this.ctx.fillRect(x - 40, y, 80, 40);
             
             this.ctx.fillStyle = '#FF5722';
             this.ctx.beginPath();
-            this.ctx.ellipse(Math.floor(x), Math.floor(obstacle.y + 20), 25, 10, 0, 0, Math.PI * 2);
+            this.ctx.ellipse(x, y + 20, 25, 10, 0, 0, Math.PI * 2);
             this.ctx.fill();
-        } else if (type === 'courtLine') {
+        } else if (obstacle.type === 'courtLine') {
             // 球场线
+            const width = this.canvas.width / (window.devicePixelRatio || 1);
             this.ctx.strokeStyle = '#FFFFFF';
             this.ctx.lineWidth = 3;
             this.ctx.setLineDash([15, 10]);
             this.ctx.beginPath();
-            this.ctx.moveTo(0, Math.floor(obstacle.y + 7));
-            this.ctx.lineTo(this.canvas.width, Math.floor(obstacle.y + 7));
+            this.ctx.moveTo(0, y + 7);
+            this.ctx.lineTo(width, y + 7);
             this.ctx.stroke();
             this.ctx.setLineDash([]);
-        } else if (type === 'movingBall') {
+        } else if (obstacle.type === 'movingBall') {
             // 移动篮球
             this.ctx.fillStyle = '#FF5722';
             this.ctx.beginPath();
-            this.ctx.arc(Math.floor(x), Math.floor(obstacle.y), 15, 0, Math.PI * 2);
+            this.ctx.arc(x, y, 15, 0, Math.PI * 2);
             this.ctx.fill();
-        } else if (type === 'threePointLine') {
+        } else if (obstacle.type === 'threePointLine') {
             // 三分线
             this.ctx.strokeStyle = '#FFD700';
             this.ctx.lineWidth = 4;
             this.ctx.beginPath();
-            this.ctx.arc(Math.floor(x), Math.floor(obstacle.y + 25), 50, Math.PI, Math.PI * 2);
+            this.ctx.arc(x, y + 25, 50, Math.PI, Math.PI * 2);
             this.ctx.stroke();
         }
         
@@ -796,18 +893,19 @@ class Game {
     }
 
     drawBonus(bonus) {
-        const x = this.laneX(bonus.lane);
+        const x = Math.floor(this.laneX(bonus.lane));
+        const y = Math.floor(bonus.y);
         
         this.ctx.fillStyle = bonus.type === 'score' ? '#FFD700' : '#00E5FF';
         this.ctx.beginPath();
-        this.ctx.arc(Math.floor(x), Math.floor(bonus.y), 12, 0, Math.PI * 2);
+        this.ctx.arc(x, y, 12, 0, Math.PI * 2);
         this.ctx.fill();
         
         this.ctx.fillStyle = '#000';
         this.ctx.font = 'bold 16px Arial';
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
-        this.ctx.fillText(bonus.type === 'score' ? '★' : '⚡', Math.floor(x), Math.floor(bonus.y));
+        this.ctx.fillText(bonus.type === 'score' ? '★' : '⚡', x, y);
     }
 
     updateScoreDisplay() {
@@ -821,15 +919,6 @@ class Game {
         this.difficultyLevel = Math.floor(this.score / 50) + 1;
         this.speed = 4 + this.difficultyLevel * 0.5;
         this.obstacleSpawnRate = 0.18 + this.difficultyLevel * 0.02;
-        
-        if (this.characters[this.selectedCharacter].special === 'slowTime' && this.player.specialCooldown <= 0) {
-            if (Math.floor(this.score) % 100 === 0 && this.score > 0) {
-                this.speed -= 2;
-                this.player.specialCooldown = 60;
-            }
-        }
-        
-        if (this.player.specialCooldown > 0) this.player.specialCooldown--;
     }
 
     spawnObstacle() {
@@ -846,8 +935,7 @@ class Game {
                 type: type,
                 lane: lane,
                 y: -100,
-                passed: false,
-                id: Date.now() + Math.random()
+                passed: false
             };
             
             if (type === 'movingBall') {
@@ -871,16 +959,17 @@ class Game {
 
     checkCollisions() {
         const playerX = this.laneX(this.player.lane);
+        const playerY = this.player.y;
         
         // 检查障碍物碰撞
         for (let i = this.obstacles.length - 1; i >= 0; i--) {
             const obs = this.obstacles[i];
             const obsX = this.laneX(obs.lane);
             
-            if (!obs.passed && obs.y > this.player.y - 50 && obs.y < this.player.y + 50) {
+            if (!obs.passed && obs.y > playerY - 50 && obs.y < playerY + 50) {
                 let collision = false;
                 const dx = playerX - obsX;
-                const dy = this.player.y - obs.y;
+                const dy = playerY - obs.y;
                 
                 if (obs.type === 'hoop') {
                     collision = Math.abs(dx) < 40 && Math.abs(dy - 20) < 30;
@@ -897,7 +986,7 @@ class Game {
                     return;
                 }
                 
-                if (obs.y > this.player.y && !obs.passed) {
+                if (obs.y > playerY && !obs.passed) {
                     obs.passed = true;
                     this.score += 5;
                 }
@@ -909,7 +998,7 @@ class Game {
             const bonus = this.bonuses[i];
             const bonusX = this.laneX(bonus.lane);
             const dx = playerX - bonusX;
-            const dy = this.player.y - bonus.y;
+            const dy = playerY - bonus.y;
             
             if (Math.sqrt(dx * dx + dy * dy) < 25) {
                 if (bonus.type === 'score') {
@@ -926,11 +1015,13 @@ class Game {
     }
 
     cleanupObjects() {
+        const height = this.canvas.height / (window.devicePixelRatio || 1);
+        
         // 清理障碍物
-        this.obstacles = this.obstacles.filter(obs => obs.y < this.canvas.height + 100);
+        this.obstacles = this.obstacles.filter(obs => obs.y < height + 100);
         
         // 清理奖励
-        this.bonuses = this.bonuses.filter(bonus => bonus.y < this.canvas.height + 50);
+        this.bonuses = this.bonuses.filter(bonus => bonus.y < height + 50);
     }
 
     gameOver() {
@@ -941,47 +1032,99 @@ class Game {
     }
 
     renderUI() {
+        // 清空UI
         this.ui.innerHTML = '';
         
         if (this.state === 'start') {
             this.ui.innerHTML = `
-                <div class="ui-panel" style="position: absolute; top: 50%; transform: translateY(-50%); width: 100%;">
+                <div class="ui-panel" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 500px;">
                     <h1>🏀 家庭篮球跑酷 🏀</h1>
-                    <p>滑动切换轨道 · 点击跳跃 · 避开障碍物</p>
-                    <button onclick="game.showCharacterSelect()">开始游戏</button>
+                    <p>左右滑动换道 · 点击屏幕跳跃 · 避开障碍物</p>
+                    <button id="start-btn">开始游戏</button>
                     <p>最高分：${this.best}</p>
-                    <p style="color: #aaa; font-size: 14px;">不同角色有不同特殊能力！</p>
-                </div>
-                <div class="controls-hint">
-                    提示：左右滑动换道，点击屏幕跳跃
+                    <p style="color: #aaa; font-size: 14px; margin-top: 20px;">提示：点击开始游戏后选择角色</p>
                 </div>
             `;
+            
+            // 绑定开始按钮事件
+            setTimeout(() => {
+                const startBtn = document.getElementById('start-btn');
+                if (startBtn) {
+                    startBtn.addEventListener('click', () => {
+                        this.showCharacterSelect();
+                    });
+                }
+            }, 50);
+            
         } else if (this.state === 'character') {
             this.ui.innerHTML = `
                 <div class="character-select ui-panel">
                     <h2>选择你的角色</h2>
                     <div class="char-grid">
                         <div class="char-option ${this.selectedCharacter === '爸爸' ? 'selected' : ''}" 
-                             onclick="game.selectCharacter('爸爸')">
+                             data-char="爸爸">
                             <div class="char-avatar" style="background: #FF9800;">👨</div>
                             <div class="char-name">爸爸</div>
-                            <div class="char-ability">特殊：二段跳</div>
+                            <div class="char-ability">二段跳能力</div>
                         </div>
-                        <!-- 其他角色类似 -->
+                        <div class="char-option ${this.selectedCharacter === 'lucky' ? 'selected' : ''}" 
+                             data-char="lucky">
+                            <div class="char-avatar" style="background: #4CAF50;">👦</div>
+                            <div class="char-name">lucky</div>
+                            <div class="char-ability">移动速度更快</div>
+                        </div>
+                        <div class="char-option ${this.selectedCharacter === '刘大力' ? 'selected' : ''}" 
+                             data-char="刘大力">
+                            <div class="char-avatar" style="background: #E91E63;">👧</div>
+                            <div class="char-name">刘大力</div>
+                            <div class="char-ability">跳跃高度更高</div>
+                        </div>
+                        <div class="char-option ${this.selectedCharacter === 'nn' ? 'selected' : ''}" 
+                             data-char="nn">
+                            <div class="char-avatar" style="background: #9C27B0;">👵</div>
+                            <div class="char-name">nn</div>
+                            <div class="char-ability">偶尔减缓时间</div>
+                        </div>
                     </div>
-                    <button onclick="game.startGame()">开始跑酷</button>
+                    <button id="confirm-char">开始跑酷</button>
                 </div>
             `;
+            
+            // 绑定角色选择事件
+            setTimeout(() => {
+                // 角色选择
+                const charOptions = document.querySelectorAll('.char-option');
+                charOptions.forEach(option => {
+                    option.addEventListener('click', (e) => {
+                        const char = option.getAttribute('data-char');
+                        this.selectCharacter(char);
+                        
+                        // 更新选中状态
+                        charOptions.forEach(opt => opt.classList.remove('selected'));
+                        option.classList.add('selected');
+                    });
+                });
+                
+                // 确认按钮
+                const confirmBtn = document.getElementById('confirm-char');
+                if (confirmBtn) {
+                    confirmBtn.addEventListener('click', () => {
+                        this.startGame();
+                    });
+                }
+            }, 50);
+            
         } else if (this.state === 'play') {
             this.ui.innerHTML = `
                 <div class="score-display">得分: ${Math.floor(this.score)}</div>
                 <div class="controls-hint">
-                    得分: ${Math.floor(this.score)} | 速度: ${this.speed.toFixed(1)} | 难度: ${this.difficultyLevel}
+                    角色: ${this.selectedCharacter} | 难度: ${this.difficultyLevel}
                 </div>
             `;
+            
         } else if (this.state === 'over') {
-            let comment = '';
             const finalScore = Math.floor(this.score);
+            let comment = '';
             if (finalScore < 50) comment = '继续练习！';
             else if (finalScore < 100) comment = '不错哦！';
             else if (finalScore < 200) comment = '太棒了！';
@@ -993,35 +1136,77 @@ class Game {
                     <p>得分：${finalScore}</p>
                     <p>${comment}</p>
                     <p>最高分：${this.best}</p>
-                    <button onclick="game.showCharacterSelect()">选择角色重玩</button>
-                    <button onclick="game.startGame()">再来一局</button>
+                    <button id="restart-btn">再来一局</button>
+                    <button id="change-char-btn">选择角色</button>
                 </div>
             `;
+            
+            // 绑定按钮事件
+            setTimeout(() => {
+                const restartBtn = document.getElementById('restart-btn');
+                const changeCharBtn = document.getElementById('change-char-btn');
+                
+                if (restartBtn) {
+                    restartBtn.addEventListener('click', () => {
+                        this.startGame();
+                    });
+                }
+                
+                if (changeCharBtn) {
+                    changeCharBtn.addEventListener('click', () => {
+                        this.showCharacterSelect();
+                    });
+                }
+            }, 50);
         }
         
-        // 绑定事件
-        this.bindUIEvents();
+        // 添加全屏按钮
+        this.addFullscreenButton();
     }
 
-    bindUIEvents() {
-        // 为所有按钮添加事件代理
-        setTimeout(() => {
-            const buttons = this.ui.querySelectorAll('button');
-            buttons.forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                });
+    addFullscreenButton() {
+        const existingBtn = document.querySelector('.fullscreen-btn');
+        if (existingBtn) existingBtn.remove();
+        
+        const fullscreenBtn = document.createElement('div');
+        fullscreenBtn.className = 'fullscreen-btn';
+        fullscreenBtn.innerHTML = '⛶';
+        fullscreenBtn.addEventListener('click', this.toggleFullscreen.bind(this));
+        this.container.appendChild(fullscreenBtn);
+    }
+
+    toggleFullscreen() {
+        const doc = window.document;
+        const docEl = doc.documentElement;
+        
+        const requestFullScreen = docEl.requestFullscreen || 
+                                 docEl.mozRequestFullScreen || 
+                                 docEl.webkitRequestFullScreen || 
+                                 docEl.msRequestFullscreen;
+        
+        const exitFullScreen = doc.exitFullscreen || 
+                              doc.mozCancelFullScreen || 
+                              doc.webkitExitFullscreen || 
+                              doc.msExitFullscreen;
+        
+        if (!doc.fullscreenElement && !doc.mozFullScreenElement && 
+            !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
+            requestFullScreen.call(docEl).catch(err => {
+                console.log('全屏失败:', err);
             });
-        }, 0);
+        } else {
+            exitFullScreen.call(doc);
+        }
+    }
+
+    selectCharacter(char) {
+        this.selectedCharacter = char;
+        console.log('选择角色:', char);
     }
 
     showCharacterSelect() {
         this.state = 'character';
         this.renderUI();
-    }
-
-    selectCharacter(char) {
-        this.selectedCharacter = char;
     }
 
     startGame() {
@@ -1039,14 +1224,16 @@ class Game {
         this.obstacleSpawnRate = 0.18;
         this.initBuildings();
         this.renderUI();
+        
+        console.log('开始游戏，角色:', this.selectedCharacter);
     }
 }
 
-// 启动游戏
+// ==================== 全局初始化 ====================
 let game;
 
 window.addEventListener('load', () => {
-    // 设置视口
+    // 设置全屏样式
     document.documentElement.style.height = '100%';
     document.body.style.height = '100%';
     
@@ -1060,75 +1247,19 @@ window.addEventListener('load', () => {
         lastTouchEnd = now;
     }, false);
     
-    // 启动游戏
+    // 初始化游戏
     game = new Game();
     
     // 阻止右键菜单
     document.addEventListener('contextmenu', (e) => {
         e.preventDefault();
     });
-});
-
-// 全屏功能
-function toggleFullscreen() {
-    const doc = window.document;
-    const docEl = doc.documentElement;
     
-    const requestFullScreen = docEl.requestFullscreen || 
-                             docEl.mozRequestFullScreen || 
-                             docEl.webkitRequestFullScreen || 
-                             docEl.msRequestFullscreen;
-    
-    const exitFullScreen = doc.exitFullscreen || 
-                          doc.mozCancelFullScreen || 
-                          doc.webkitExitFullscreen || 
-                          doc.msExitFullscreen;
-    
-    if (!doc.fullscreenElement && !doc.mozFullScreenElement && 
-        !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
-        requestFullScreen.call(docEl).catch(err => {
-            console.log(`全屏请求失败: ${err.message}`);
-        });
-    } else {
-        exitFullScreen.call(doc);
-    }
-}
-
-// 添加全屏按钮到 UI
-document.addEventListener('DOMContentLoaded', () => {
-    const container = document.getElementById('container');
-    const fullscreenBtn = document.createElement('div');
-    fullscreenBtn.className = 'fullscreen-btn';
-    fullscreenBtn.innerHTML = '⛶';
-    fullscreenBtn.addEventListener('click', toggleFullscreen);
-    container.appendChild(fullscreenBtn);
+    console.log('游戏初始化完成');
 });
 
-// 处理方向锁定
-function lockOrientation() {
-    if (screen.orientation && screen.orientation.lock) {
-        screen.orientation.lock('landscape').catch(() => {
-            // 锁定失败，继续游戏
-        });
-    }
-}
-
-// 页面可见性变化
-document.addEventListener('visibilitychange', () => {
-    if (game && game.state === 'play' && document.hidden) {
-        game.state = 'paused';
-        game.renderUI();
-    }
-});
-
-// 处理返回键
-window.addEventListener('popstate', (e) => {
-    if (game && game.state === 'play') {
-        e.preventDefault();
-        game.state = 'paused';
-        game.renderUI();
-    }
-});
+// 全局导出游戏实例供调试
+window.game = game;
 </script>
 </body>
 </html>
